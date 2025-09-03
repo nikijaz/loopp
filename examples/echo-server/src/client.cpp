@@ -18,7 +18,7 @@ void Client::handle_read() {
         handle_disconnect();
     }
 
-    if (errno != EAGAIN && errno != EWOULDBLOCK) {  // An error occurred
+    if (bytes_read < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {  // An error occurred
         handle_disconnect();
     }
 }
