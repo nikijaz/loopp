@@ -1,14 +1,9 @@
-cmake_minimum_required(VERSION 3.10.0)
-project(echo-server LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
+# Add source files
 aux_source_directory(src/ SRC_LIST)
 add_executable(echo-server ${SRC_LIST})
 
-target_include_directories(echo-server PUBLIC ${CMAKE_SOURCE_DIR}/src)
+# Add header files
+target_include_directories(echo-server PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
-target_link_libraries(echo-server PUBLIC loopp)
-
-target_compile_options(echo-server PRIVATE -Wall)
+# Link against loopp library
+target_link_libraries(echo-server PRIVATE loopp)

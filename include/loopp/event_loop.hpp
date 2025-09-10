@@ -6,7 +6,7 @@
 
 namespace loopp {
 
-enum class EventType {
+enum class EventType : uint8_t {
     READ,
     WRITE
 };

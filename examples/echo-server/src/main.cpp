@@ -16,15 +16,15 @@ int main() {
     std::signal(SIGINT, shutdown_handler);
     std::signal(SIGTERM, shutdown_handler);
 
-    std::cout << "Server starting on port " << SERVER_PORT << std::endl;
-    server.start([](auto client) {
+    std::cout << "Server starting on port " << SERVER_PORT << '\n';
+    server.start([](const auto& client) {
         client->write("Hello, World!\n");
 
-        client->on_read([](auto client, const std::string& data) {
+        client->on_read([](const auto& client, const std::string& data) {
             client->write("Echo: " + data);
         });
     });
 
-    std::cout << "Server shut down" << std::endl;
+    std::cout << "Server shut down" << '\n';
     return EXIT_SUCCESS;
 }

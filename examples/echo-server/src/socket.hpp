@@ -16,13 +16,13 @@ class Socket {
 
     Socket(const Socket&) = delete;
     Socket& operator=(const Socket&) = delete;
-    Socket(Socket&& other);
-    Socket& operator=(Socket&& other);
+    Socket(Socket&& other) noexcept;
+    Socket& operator=(Socket&& other) noexcept;
 
     /*
      * Get the file descriptor associated with the socket.
      */
-    int fd() const;
+    [[nodiscard]] int fd() const;
 
     /*
      * Make the socket non-blocking.

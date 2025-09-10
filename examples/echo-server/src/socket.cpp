@@ -18,11 +18,11 @@ Socket::~Socket() {
     }
 }
 
-Socket::Socket(Socket&& other) : fd_(other.fd_) {
+Socket::Socket(Socket&& other) noexcept : fd_(other.fd_) {
     other.fd_ = -1;
 }
 
-Socket& Socket::operator=(Socket&& other) {
+Socket& Socket::operator=(Socket&& other) noexcept {
     if (this != &other) {
         if (fd_ >= 0) {
             ::close(fd_);
@@ -48,7 +48,7 @@ void Socket::set_nonblocking() {
 }
 
 void Socket::bind(const sockaddr_in& addr) {
-    if (::bind(fd_, (const sockaddr*)&addr, sizeof(addr)) == -1) {
+    if (::bind(fd_, reinterpret_cast<const sockaddr*>(&addr), sizeof(addr)) == -1) {
         throw std::runtime_error("Failed to bind socket");
     }
 }
@@ -61,7 +61,7 @@ void Socket::listen() {
 
 int Socket::accept(sockaddr_in& addr) {
     socklen_t len = sizeof(addr);
-    int cfd = ::accept(fd_, (sockaddr*)&addr, &len);
+    int cfd = ::accept(fd_, reinterpret_cast<sockaddr*>(&addr), &len);
     return cfd;
 }
 
@@ -74,9 +74,9 @@ ssize_t Socket::write(const void* buf, size_t size) {
 }
 
 int Socket::create_tcp_socket() {
-    int fd = ::socket(AF_INET, SOCK_STREAM, 0);
-    if (fd == -1) {
+    int new_fd = ::socket(AF_INET, SOCK_STREAM, 0);
+    if (new_fd == -1) {
         throw std::runtime_error("Failed to create socket");
     }
-    return fd;
+    return new_fd;
 }

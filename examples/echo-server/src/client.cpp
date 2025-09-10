@@ -2,7 +2,7 @@
 
 constexpr size_t BUFFER_SIZE = 1024;
 
-Client::Client(Socket&& socket, std::shared_ptr<loopp::EventLoop> loop) : socket_(std::move(socket)), loop_(loop) {
+Client::Client(Socket&& socket, std::shared_ptr<loopp::EventLoop> loop) : socket_(std::move(socket)), loop_(std::move(loop)) {
     socket_.set_nonblocking();
 }
 
@@ -11,7 +11,7 @@ void Client::handle_read() {
     ssize_t bytes_read = socket_.read(buffer, sizeof(buffer));
 
     if (bytes_read > 0 && read_callback_) {  // We received data
-        read_callback_(shared_from_this(), std::string(buffer, bytes_read));
+        read_callback_(shared_from_this(), std::string(buffer, static_cast<size_t>(bytes_read)));
     }
 
     if (bytes_read == 0) {  // No data, client disconnected
@@ -27,7 +27,7 @@ void Client::handle_write() {
     ssize_t bytes_written = socket_.write(write_buffer_.data(), write_buffer_.size());
 
     if (bytes_written > 0) {  // We sent data
-        write_buffer_.erase(0, bytes_written);
+        write_buffer_.erase(0, static_cast<size_t>(bytes_written));
     }
 
     if (bytes_written < 0) {

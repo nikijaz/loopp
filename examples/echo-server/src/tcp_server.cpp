@@ -7,7 +7,7 @@ TcpServer::TcpServer(int port) : socket_(Socket::create_tcp_socket()) {
 
     sockaddr_in addr;
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(port);
+    addr.sin_port = htons(static_cast<uint16_t>(port));
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
     socket_.bind(addr);
@@ -16,7 +16,7 @@ TcpServer::TcpServer(int port) : socket_(Socket::create_tcp_socket()) {
 std::shared_ptr<Client> TcpServer::connect_client(Socket&& socket) {
     auto client = std::make_shared<Client>(std::move(socket), loop_);
     clients_.insert(client);
-    client->on_disconnect([this](auto client) {
+    client->on_disconnect([this](const auto& client) {
         disconnect_client(client);
     });
     client->start();
