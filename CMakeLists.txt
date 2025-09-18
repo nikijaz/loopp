@@ -72,7 +72,6 @@ if(CPPCHECK)
         --force
         --quiet
         --suppress=missingIncludeSystem
-        --suppress=unusedFunction
         --error-exitcode=1
         --project=${CMAKE_BINARY_DIR}/compile_commands.json
         ${CPPCHECK_TARGETS}

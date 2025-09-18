@@ -1,31 +1,41 @@
 #pragma once
 
-#include <atomic>
+#include <cstdint>
 #include <functional>
 #include <memory>
 
 namespace loopp {
 
+/*
+ * Types of events that can be monitored.
+ * If updating, also update EventCallbacks struct.
+ */
 enum class EventType : uint8_t {
     READ,
     WRITE
 };
 
-using EventCallback = std::function<void(int, EventType)>;
+/*
+ * Function signature for event callbacks.
+ */
+using EventCallback = std::function<void(int fd, EventType type)>;
 
 /*
- * Manages I/O events for multiple file descriptors.
+ * Manages I/O events for multiple file descriptors, thread-safe.
+ * Uses the best available mechanism based on the platform.
  */
 class EventLoop {
-   protected:
-    std::atomic<bool> is_running_{false};
-    std::unordered_map<int, std::unordered_map<EventType, EventCallback>> event_callbacks_;
-
    public:
+    /*
+     * Create an instance of the EventLoop.
+     * Best available implementation will be chosen.
+     * Returns a unique_ptr to the created EventLoop instance.
+     * Throws `std::system_error` on initialization failure.
+     */
     static std::unique_ptr<EventLoop> create();
 
     EventLoop() = default;
-    virtual ~EventLoop() = default;
+    virtual ~EventLoop() noexcept = default;
 
     EventLoop(const EventLoop&) = delete;
     EventLoop& operator=(const EventLoop&) = delete;
@@ -33,28 +43,31 @@ class EventLoop {
     EventLoop& operator=(EventLoop&&) = delete;
 
     /*
-     * Add a file descriptor to the event loop. One callback per file descriptor and event type.
-     * Returns true on success, false if it can't be added due to kernel limitations.
-     * Safe to call multiple times.
+     * Add a file descriptor to the event loop with the specified event type and callback.
+     * Returns true on success, false on failure (check errno for details).
+     * If the file descriptor and event type are already registered, it's a no-op and returns true.
      */
-    virtual bool add_fd(int fd, EventType type, const EventCallback& callback) = 0;
+    virtual bool add_fd(int fd, EventType type, const EventCallback& callback) noexcept = 0;
 
     /*
-     * Remove a file descriptor from the event loop.
-     * If the file descriptor is not found, function does nothing.
+     * Remove a file descriptor and event type from the event loop.
+     * Returns true on success, false on failure (check errno for details).
+     * If the file descriptor or event type is not registered, it's a no-op and returns true.
      */
-    virtual void remove_fd(int fd, EventType type) = 0;
+    virtual bool remove_fd(int fd, EventType type) noexcept = 0;
 
     /*
      * Start the event loop.
+     * This call blocks until stop() is called from another thread.
      */
     virtual void start() = 0;
 
     /*
-     * Stop the event loop by unblocking waiting for events.
-     * Safe to call multiple times, thread-safe.
+     * Stop the event loop.
+     * Returns true on success, false if it can't be woken up (check errno for details).
+     * If the loop is not running, it's a no-op and returns true.
      */
-    virtual void stop() = 0;
+    virtual bool stop() noexcept = 0;
 };
 
 }  // namespace loopp

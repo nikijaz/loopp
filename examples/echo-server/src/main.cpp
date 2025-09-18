@@ -1,9 +1,11 @@
 #include <csignal>
+#include <cstdlib>
 #include <iostream>
+#include <string>
 
 #include "tcp_server.hpp"
 
-constexpr int SERVER_PORT = 8080;
+static constexpr int SERVER_PORT = 8082;
 
 static TcpServer server(SERVER_PORT);
 

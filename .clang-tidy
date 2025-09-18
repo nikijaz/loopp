@@ -5,6 +5,7 @@ Checks: >
   bugprone-*,
   modernize-*,
   performance-*,
+  misc-include-cleaner,
   -modernize-use-trailing-return-type,
   -modernize-avoid-c-arrays,
 WarningsAsErrors: '*'
