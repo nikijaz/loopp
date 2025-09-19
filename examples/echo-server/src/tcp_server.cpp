@@ -11,6 +11,7 @@
 
 #include "client.hpp"
 #include "loopp/event_loop.hpp"
+#include "socket.hpp"
 
 TcpServer::TcpServer(int port) : socket_(Socket::create_tcp_socket()) {
     if (!socket_.set_reuse_addr()) {

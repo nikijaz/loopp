@@ -27,7 +27,7 @@ else()
     message(STATUS "Using select event loop backend (fallback)")
 endif()
 
-# Add event loop imlpementation file
+# Add event loop implementation file
 add_library(loopp STATIC ${EVENT_LOOP_SRC})
 
 # Add header files
@@ -45,60 +45,14 @@ target_compile_options(loopp PRIVATE
     -Wundef
 )
 
-# Static analysis with clang-tidy
-find_program(CLANG_TIDY clang-tidy)
-if(CLANG_TIDY)
-    file(GLOB_RECURSE CLANG_TIDY_TARGETS
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/examples/*.[ch]pp
-    )
-
-    add_custom_target(clang-tidy
-        COMMAND ${CLANG_TIDY}
-        -p ${CMAKE_BINARY_DIR}
-        ${CLANG_TIDY_TARGETS}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    )
-endif()
-
-# Static analysis with cppcheck
-find_program(CPPCHECK cppcheck)
-if(CPPCHECK)
-    add_custom_target(cppcheck
-        COMMAND ${CPPCHECK}
-        --enable=all
-        --std=c++23
-        --force
-        --quiet
-        --suppress=missingIncludeSystem
-        --error-exitcode=1
-        --project=${CMAKE_BINARY_DIR}/compile_commands.json
-        ${CPPCHECK_TARGETS}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    )
-endif()
-
-# Code formatting
-find_program(CLANG_FORMAT clang-format) 
-if(CLANG_FORMAT)
-    file(GLOB_RECURSE CLANG_FORMAT_TARGETS
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/examples/*.[ch]pp
-    )
-
-    add_custom_target(clang-format
-        COMMAND ${CLANG_FORMAT}
-        --dry-run
-        --Werror
-        ${CLANG_FORMAT_TARGETS}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    )
+# Check if we are in the main project
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    option(BUILD_EXAMPLES OFF)
+else()
+    set(BUILD_EXAMPLES OFF)
 endif()
 
 # Build examples if enabled
-option(BUILD_EXAMPLES OFF)
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
