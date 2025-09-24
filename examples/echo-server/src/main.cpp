@@ -5,7 +5,7 @@
 
 #include "tcp_server.hpp"
 
-static constexpr int SERVER_PORT = 8082;
+static constexpr int SERVER_PORT = 8080;
 
 static TcpServer server(SERVER_PORT);
 
