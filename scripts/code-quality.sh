@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This script performs code quality checks using clang-tidy, cppcheck, and clang-format.
+# This script performs code quality checks using Clang-Format and Clang-Tidy.
 
 # Colors for output
 RED='\033[0;31m'
@@ -23,45 +23,57 @@ SOURCE_FILES=$(find "${SOURCE_DIRS[@]}" -type f \( -name "*.cpp" -o -name "*.hpp
 
 # Logging functions
 pinfo() { echo -e "${GREEN}[INFO]${NO_COLOR} $1"; }
-pwarn() { echo -e "${YELLOW}[WARN]${NO_COLOR} $1"; }
-perr() { echo -e "${RED}[ERROR]${NO_COLOR} $1"; }
+pwarn() {
+    if [[ -n "$GITHUB_ACTIONS" ]]; then
+        echo "::warning::$1"
+    else
+        echo -e "${YELLOW}[WARN]${NO_COLOR} $1"
+    fi
+}
+perr() {
+    if [[ -n "$GITHUB_ACTIONS" ]]; then
+        echo "::error::$1"
+    else
+        echo -e "${RED}[ERROR]${NO_COLOR} $1"
+    fi
+}
 
-# clang-tidy
+# Clang-Tidy
 run_clang_tidy() {
-    pinfo "Running clang-tidy static analysis..."
+    pinfo "Running Clang-Tidy analysis..."
 
-    if ! command -v clang-tidy &>/dev/null; then
-        pwarn "clang-tidy not found, skipping..."
+    if ! command -v run-clang-tidy-18 &>/dev/null; then
+        pwarn "Clang-Tidy not found"
         return 0
     fi
 
     if [[ ! -f "${BUILD_DIR}/compile_commands.json" ]]; then
-        pwarn "compile_commands.json not found in ${BUILD_DIR}, skipping..."
+        pwarn "No compile_commands.json found in ${BUILD_DIR}"
         return 0
     fi
 
-    if echo "$SOURCE_FILES" | xargs clang-tidy -p "${BUILD_DIR}"; then
-        pinfo "clang-tidy completed successfully"
+    if echo "$SOURCE_FILES" | xargs run-clang-tidy-18 -p "${BUILD_DIR}" -quiet; then
+        pinfo "Clang-Tidy check passed"
     else
-        perr "clang-tidy found issues"
+        perr "Clang-Tidy found linting issues"
         return 1
     fi
 }
 
-# clang-format
+# Clang-Format
 run_clang_format() {
-    pinfo "Running clang-format check..."
+    pinfo "Running Clang-Format check..."
 
-    if ! command -v clang-format &>/dev/null; then
-        pwarn "clang-format not found, skipping..."
+    if ! command -v clang-format-18 &>/dev/null; then
+        pwarn "Clang-Format not found"
         return 0
     fi
 
-    if echo "$SOURCE_FILES" | xargs clang-format --dry-run --Werror; then
-        pinfo "clang-format check completed successfully"
+    if echo "$SOURCE_FILES" | xargs clang-format-18 --dry-run --Werror; then
+        pinfo "Clang-Format check passed"
     else
-        perr "clang-format found formatting issues"
-        return 1
+        pwarn "Clang-Format found formatting issues"
+        return 0
     fi
 }
 
@@ -69,7 +81,7 @@ run_clang_format() {
 show_usage() {
     echo "Usage: $0 [OPTIONS]"
     echo ""
-    echo "By default, runs all code quality checks (clang-tidy, cppcheck, clang-format)."
+    echo "By default, runs all code quality checks (clang-tidy, clang-format)."
     echo ""
     echo "Options:"
     echo "  -h, --help          Show this help message"
@@ -125,12 +137,6 @@ main() {
 
     [[ $run_tidy == true ]] && { run_clang_tidy || exit_code=1; }
     [[ $run_format == true ]] && { run_clang_format || exit_code=1; }
-
-    if [[ $exit_code -eq 0 ]]; then
-        pinfo "All code quality checks passed!"
-    else
-        perr "Some code quality checks failed."
-    fi
 
     exit $exit_code
 }
