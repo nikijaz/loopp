@@ -87,6 +87,10 @@ class EventLoopEpoll final : public EventLoop {
         if (epoll_fd_ != -1) close(epoll_fd_);
     }
 
+    [[nodiscard]] bool is_running() const noexcept override {
+        return is_running_.load();
+    }
+
     bool add_fd(int fd, EventType type, const EventCallback& callback) noexcept override {
         std::lock_guard<std::mutex> lock(mutex_);
 

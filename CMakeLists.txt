@@ -14,18 +14,37 @@ endif()
 # Enable compile_commands.json for IDE integration
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Check for platform-specific headers
-include(CheckIncludeFileCXX)
-check_include_file_cxx("sys/epoll.h" HAVE_EPOLL)
+# Backend selection
+set(BACKEND "auto" CACHE STRING "")
+set_property(CACHE BACKEND PROPERTY STRINGS auto epoll select)
 
-# Select event loop implementation
-if(HAVE_EPOLL)
-    set(EVENT_LOOP_SRC src/event_loop_epoll.cpp)
-    message(STATUS "Using epoll event loop backend")
+# Determine backend to use
+if(BACKEND STREQUAL "auto")
+    include(CheckIncludeFileCXX)
+    check_include_file_cxx("sys/epoll.h" HAVE_EPOLL)
+    if(HAVE_EPOLL)
+        set(SELECTED_BACKEND "epoll")
+    else()
+        set(SELECTED_BACKEND "select")
+    endif()
+elseif(BACKEND STREQUAL "epoll" OR BACKEND STREQUAL "select")
+    set(SELECTED_BACKEND ${BACKEND})
 else()
-    set(EVENT_LOOP_SRC src/event_loop_select.cpp)
-    message(STATUS "Using select event loop backend (fallback)")
+    message(FATAL_ERROR "Invalid BACKEND: ${BACKEND}. Must be auto, epoll, or select")
 endif()
+
+# Validate availability if explicitly requested
+if(SELECTED_BACKEND STREQUAL "epoll")
+    include(CheckIncludeFileCXX)
+    check_include_file_cxx("sys/epoll.h" HAVE_EPOLL)
+    if(NOT HAVE_EPOLL)
+        message(FATAL_ERROR "epoll backend requested but sys/epoll.h not found")
+    endif()
+endif()
+
+# Set source file and display message
+set(EVENT_LOOP_SRC src/event_loop_${SELECTED_BACKEND}.cpp)
+message(STATUS "Using ${SELECTED_BACKEND} event loop backend")
 
 # Add event loop implementation file
 add_library(loopp STATIC ${EVENT_LOOP_SRC})
@@ -55,4 +74,22 @@ endif()
 # Build examples if enabled
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)
+endif()
+
+# Include tests only if this is the main project
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    # Add Catch2 subdirectory
+    add_subdirectory(lib/Catch2 SYSTEM)
+
+    # Add test source files
+    file(GLOB TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp")
+    add_executable(loopp_test ${TEST_SOURCES})
+
+    # Enable testing
+    enable_testing()
+    target_link_libraries(loopp_test PRIVATE loopp Catch2::Catch2WithMain)
+
+    # Discover and register individual tests with CTest
+    include(Catch)
+    catch_discover_tests(loopp_test)
 endif()

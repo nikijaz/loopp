@@ -43,6 +43,11 @@ class EventLoop {
     EventLoop& operator=(EventLoop&&) = delete;
 
     /*
+     * Check if the event loop is currently running.
+     */
+    [[nodiscard]] virtual bool is_running() const noexcept = 0;
+
+    /*
      * Add a file descriptor to the event loop with the specified event type and callback.
      * Returns true on success, false on failure (check errno for details).
      * If the file descriptor and event type are already registered, it's a no-op and returns true.

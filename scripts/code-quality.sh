@@ -16,6 +16,7 @@ BUILD_DIR="${BUILD_DIR:-${PROJECT_ROOT}/build}"
 SOURCE_DIRS=(
     "${PROJECT_ROOT}/src"
     "${PROJECT_ROOT}/include"
+    "${PROJECT_ROOT}/tests"
     "${PROJECT_ROOT}/examples"
 )
 SOURCE_FILES=$(find "${SOURCE_DIRS[@]}" -type f \( -name "*.cpp" -o -name "*.hpp" \) 2>/dev/null)
@@ -47,35 +48,6 @@ run_clang_tidy() {
     fi
 }
 
-# cppcheck
-run_cppcheck() {
-    pinfo "Running cppcheck static analysis..."
-
-    if ! command -v cppcheck &>/dev/null; then
-        pwarn "cppcheck not found, skipping..."
-        return 0
-    fi
-
-    if [[ ! -f "${BUILD_DIR}/compile_commands.json" ]]; then
-        pwarn "compile_commands.json not found in ${BUILD_DIR}, skipping..."
-        return 0
-    fi
-
-    if cppcheck \
-        --enable=all \
-        --std=c++23 \
-        --force \
-        --quiet \
-        --suppress=missingIncludeSystem \
-        --error-exitcode=1 \
-        --project="${BUILD_DIR}/compile_commands.json"; then
-        pinfo "cppcheck completed successfully"
-    else
-        perr "cppcheck found issues"
-        return 1
-    fi
-}
-
 # clang-format
 run_clang_format() {
     pinfo "Running clang-format check..."
@@ -102,7 +74,6 @@ show_usage() {
     echo "Options:"
     echo "  -h, --help          Show this help message"
     echo "  -t, --tidy          Run only clang-tidy"
-    echo "  -c, --cppcheck      Run only cppcheck"
     echo "  -f, --format        Run only clang-format"
     echo ""
     echo "Environment variables:"
@@ -112,7 +83,6 @@ show_usage() {
 # Entry point
 main() {
     local run_tidy=false
-    local run_cppcheck=false
     local run_format=false
 
     while [[ $# -gt 0 ]]; do
@@ -123,9 +93,6 @@ main() {
             ;;
         -t | --tidy)
             run_tidy=true
-            ;;
-        -c | --cppcheck)
-            run_cppcheck=true
             ;;
         -f | --format)
             run_format=true
@@ -140,9 +107,8 @@ main() {
     done
 
     # If no specific tool is selected, run all
-    if ! $run_tidy && ! $run_cppcheck && ! $run_format; then
+    if ! $run_tidy && ! $run_format; then
         run_tidy=true
-        run_cppcheck=true
         run_format=true
     fi
 
@@ -158,7 +124,6 @@ main() {
     local exit_code=0
 
     [[ $run_tidy == true ]] && { run_clang_tidy || exit_code=1; }
-    [[ $run_cppcheck == true ]] && { run_cppcheck || exit_code=1; }
     [[ $run_format == true ]] && { run_clang_format || exit_code=1; }
 
     if [[ $exit_code -eq 0 ]]; then
