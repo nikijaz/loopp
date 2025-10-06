@@ -2,6 +2,7 @@
 Checks: >
   clang-diagnostic-*,
   clang-analyzer-*,
+  -clang-analyzer-optin.*, # Catch2
   bugprone-*,
   modernize-*,
   performance-*,
